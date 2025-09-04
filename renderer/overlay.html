@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="overlay.css">
+</head>
+<body>
+    <div id="toolbar" class="toolbar">
+        <div class="toolbar-head" id="toolbarHead">
+            <span class="title">Annotator</span>
+            <button id="btnToggleDraw" title="Toggle Draw (Ctrl+Shift+D)">✏️</button>
+            <button id="btnMode" title="Toggle Persist/Temp (Ctrl+Shift+T)">P</button>
+            <button id="btnClear" title="Limpar">🧽</button>
+        </div>
+
+        <div class="toolbar-body">
+            <label class="control">
+                <input id="colorPicker" type="color" value="#000000">
+            </label>
+
+            <label class="control range">
+                <input id="widthSlider" type="range" min="1" max="40" value="2">
+                <span id="widthValue">2</span>
+            </label>
+
+            <div class="actions">
+                <button id="btnUndo" title="Undo (Ctrl+Z)">↶</button>
+                <button id="btnRedo" title="Redo (Ctrl+Y)">↷</button>
+                <button id="btnSave" title="Salvar PNG">💾</button>
+            </div>
+        </div>
+    </div>
+
+
+    <canvas id="overlay"></canvas>
+
+    <script src="stroke.js"></script>
+    <script src="canvasManager.js"></script>
+    <script src="eventManager.js"></script>
+    <script src="overlayApp.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
