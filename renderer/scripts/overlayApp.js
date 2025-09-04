@@ -26,11 +26,7 @@ if (window.electronAPI) {
     window.electronAPI.onOverlayModeChanged?.(val => {
         window.overlayMode = val;
         console.log("Renderer recebeu overlay-mode:", val);
-        if (val === "temporario") {
-            canvasManager.strokes = [];
-            canvasManager.redoStack = [];
-            canvasManager.redraw();
-        }
+        canvasManager.redraw();
     });
 }
 

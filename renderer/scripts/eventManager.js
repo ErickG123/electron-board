@@ -2,9 +2,9 @@ class EventManager {
     constructor(canvas, canvasManager, options = {}) {
         this.canvas = canvas;
         this.canvasManager = canvasManager;
-        this.isDrawing = false;
-        this.currentStroke = null;
 
+        this.isDrawing = false;
+        this.currentShape = null;
         this.isOverlay = options.isOverlay || false;
 
         this.isPanning = false;
@@ -15,11 +15,7 @@ class EventManager {
 
     getMousePos(evt) {
         const rect = this.canvas.getBoundingClientRect();
-
-        return {
-            x: evt.clientX - rect.left,
-            y: evt.clientY - rect.top
-        };
+        return { x: evt.clientX - rect.left, y: evt.clientY - rect.top };
     }
 
     registerEvents() {
@@ -33,27 +29,30 @@ class EventManager {
                     break;
 
                 case "eraser-stroke":
-                    this.eraseStroke({
-                        x: pos.x - this.canvasManager.offsetX,
-                        y: pos.y - this.canvasManager.offsetY
-                    });
+                    this.canvasManager.strokes = this.canvasManager.strokes.filter(
+                        s => !s.hitTest || !s.hitTest(pos.x - this.canvasManager.offsetX, pos.y - this.canvasManager.offsetY)
+                    );
+                    this.canvasManager.redraw();
                     break;
 
                 case "eraser-paint":
                     this.isDrawing = true;
                     break;
 
-                case "draw":
+                default:
                     this.isDrawing = true;
-                    this.currentStroke = new Stroke(
-                        window.currentColor || "black",
-                        window.currentWidth || 2
-                    );
-                    this.currentStroke.addPoint(
+                    let text = null;
+
+                    if (window.currentTool === "text") text = prompt("Digite o texto:") || "";
+
+                    this.currentShape = new Shape(
+                        window.currentTool,
+                        window.currentColor,
+                        window.currentWidth,
                         pos.x - this.canvasManager.offsetX,
-                        pos.y - this.canvasManager.offsetY
+                        pos.y - this.canvasManager.offsetY,
+                        text
                     );
-                    break;
             }
         });
 
@@ -66,7 +65,6 @@ class EventManager {
 
                 this.canvasManager.offsetX += dx;
                 this.canvasManager.offsetY += dy;
-
                 this.startPan = pos;
                 this.canvasManager.redraw();
                 return;
@@ -75,40 +73,32 @@ class EventManager {
             if (!this.isDrawing) return;
 
             if (window.currentTool === "eraser-paint") {
-                const x = pos.x;
-                const y = pos.y;
                 const size = window.currentWidth || 20;
-                this.canvasManager.eraseArea(x, y, size);
-            }
 
-            if (window.currentTool === "draw" && this.currentStroke) {
-                this.currentStroke.addPoint(
-                    pos.x - this.canvasManager.offsetX,
-                    pos.y - this.canvasManager.offsetY
-                );
-
+                this.canvasManager.eraseArea(pos.x, pos.y, size);
+            } else if (this.currentShape) {
+                this.currentShape.setEnd(pos.x - this.canvasManager.offsetX, pos.y - this.canvasManager.offsetY);
                 this.canvasManager.redraw();
-                this.currentStroke.draw(this.canvasManager.ctx, this.canvasManager.offsetX, this.canvasManager.offsetY);
+                this.currentShape.draw(this.canvasManager.ctx, this.canvasManager.offsetX, this.canvasManager.offsetY);
             }
         });
 
         this.canvas.addEventListener("mouseup", () => {
-            if (this.isPanning) {
-                this.isPanning = false;
-                return;
-            }
-
+            if (this.isPanning) { this.isPanning = false; return; }
             if (!this.isDrawing) return;
+
             this.isDrawing = false;
 
-            if (window.currentTool === "draw" && this.currentStroke) {
+            if (this.currentShape) {
                 if (this.isOverlay) {
-                    const temporario = window.overlayMode === "temporario";
-                    this.canvasManager.addStrokeOverlay(this.currentStroke, temporario);
+                    const temp = window.overlayMode === "temporario";
+
+                    this.canvasManager.addStrokeOverlay(this.currentShape, temp);
                 } else {
-                    this.canvasManager.addStroke(this.currentStroke);
+                    this.canvasManager.addStroke(this.currentShape);
                 }
-                this.currentStroke = null;
+
+                this.currentShape = null;
             }
         });
 
@@ -116,12 +106,5 @@ class EventManager {
             if (e.ctrlKey && e.key === "z") this.canvasManager.undo();
             if (e.ctrlKey && e.key === "y") this.canvasManager.redo();
         });
-    }
-
-    eraseStroke(pos) {
-        this.canvasManager.strokes = this.canvasManager.strokes.filter(stroke => {
-            return !stroke.hitTest(pos.x, pos.y);
-        });
-        this.canvasManager.redraw();
     }
 }

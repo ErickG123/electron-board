@@ -1,121 +1,101 @@
-# Universal Annotator
+# Overlay Annotator
 
-Aplicativo de desenho moderno para Whiteboard e Overlay, desenvolvido em **Electron + JavaScript/TypeScript**.  
-Permite desenhar diretamente sobre a tela do PC, com suporte a undo/redo, cores, espessura e gestos via webcam.
+## 🎯 **Descrição do Projeto**
 
----
+O Overlay Annotator é uma ferramenta para anotações sobre a tela do computador em tempo real.
+Ele permite desenhar, mover a tela, apagar linhas individualmente ou em área, e salvar capturas com as anotações.
 
-## 🎯 Objetivo
-
-Criar um aplicativo polido, moderno e comercializável que funcione como:
-- Whiteboard independente para desenho.
-- Overlay transparente sobre qualquer aplicação.
-- Controle de cores, espessura e modos via tooltip/toolbar.
-- Integração com gestos de mãos via webcam.
+O projeto é desenvolvido usando HTML, CSS e JavaScript, e integrado com Electron para captura da tela e comunicação com a camada nativa.
 
 ---
 
-## 🚀 Funcionalidades Principais
+## 🚀 **Funcionalidades Implementadas**
 
-1. **Whiteboard Mode**
-   - Janela de desenho independente.
-   - Alterar cor, espessura, undo/redo.
-   - Exportar desenho como PNG ou copiar para clipboard.
+### 🎨 Ferramentas de Desenho
 
-2. **Overlay Mode**
-   - Janela transparente sempre em cima.
-   - Desenhar sobre qualquer aplicação.
-   - Toggle para ativar/desativar Overlay.
+* **Draw**: desenhar linhas com cor e espessura configuráveis.
+* **Eraser-Stroke**: apagar linhas inteiras clicando sobre elas.
+* **Eraser-Paint**: apagar pixels em uma área (visual apenas, não altera permanentemente o stroke).
+* **Pan**: mover o conteúdo da tela (offset aplicado aos desenhos).
 
-3. **Tooltip/Toolbar Oculta**
-   - Fica escondida até hover ou atalho.
-   - Controles: cor, espessura, modo, limpar tela.
+### 🛠 Controles e Toolbar
 
-4. **Gestos via Webcam**
-   - Detectar gestos específicos usando MediaPipe Hands ou Handtrack.js:
-     - Mão aberta → desfazer (undo)
-     - Punho fechado → limpar tela
-     - Dois dedos → mudar cor ou modo
+* **Toolbar flutuante**:
 
-5. **Undo / Redo**
-   - Pilhas de ações locais para desfazer e refazer desenhos.
+  * Toggle Draw Mode (ativar/desativar interação com a tela)
+  * Toggle Persistente/Temporário (modo de anotações persistente ou descartável)
+  * Undo / Redo
+  * Limpar todos os desenhos
+  * Salvar PNG (em desenvolvimento)
+  * Seleção de cor e espessura da linha
+  * Botões de ferramentas (Draw, Pan, Eraser-Paint, Eraser-Stroke)
 
-6. **Extras**
-   - Camadas opcionais.
-   - Atalhos globais configuráveis.
-   - Inicialização em segundo plano.
+### ⚡ Funcionalidades Extras
 
----
+* **Redraw automático** ao mover a tela ou mudar o tamanho da janela.
+* **Gerenciamento de camadas e offsets** para suportar Pan e Draw simultaneamente.
+* **Integração com Electron**:
 
-## 🏗 Roadmap de Implementação
-
-1. **Estrutura base Electron**
-   - Criar janelas Whiteboard e Overlay.
-   - Configurar transparência e atalhos globais.
-
-2. **Motor de Desenho**
-   - Estrutura de Stroke (`type`, `points`, `color`, `thickness`).
-   - Implementar adicionar stroke, undo/redo, limpar.
-
-3. **Whiteboard Mode**
-   - Janela independente com canvas.
-   - Renderização de strokes e controles básicos.
-
-4. **Overlay Mode**
-   - Janela transparente, sempre em cima.
-   - Desenho sobre qualquer aplicação.
-
-5. **Tooltip/Toolbar Oculta**
-   - Controles de cor, espessura e modo.
-   - Pequenos ícones animados.
-
-6. **Gestos via Webcam**
-   - Integração com MediaPipe Hands ou Handtrack.js.
-   - Mapeamento de gestos para ações (undo, limpar, mudar cor).
-
-7. **UX/UI Refinado**
-   - UI moderna com HTML/CSS animado.
-   - Transparência suave e suavização de traços.
-
-8. **Exportação / Camadas**
-   - Salvar desenho como PNG.
-   - Suporte a camadas no Overlay.
-
-9. **Distribuição**
-   - Build multiplataforma com Electron Builder.
-   - Testar Overlay e atalhos globais em múltiplos apps.
-   - Criar instalador simples.
+  * Recebe eventos de mudança de modo de desenho (`drawing-mode`) e de overlay (`overlay-mode`).
+  * Captura de tela para salvar imagens com sobreposição de anotações.
 
 ---
 
-## 📌 Ordem sugerida de desenvolvimento
+## 📝 Funcionalidades Planejadas
 
-1. Estrutura base Electron + janelas.
-2. Motor de desenho com strokes + undo/redo + limpar.
-3. Whiteboard Mode funcional.
-4. Overlay Mode funcional.
-5. Tooltip/Toolbar oculta.
-6. Gestos via webcam integrados.
-7. UX refinado e animações.
-8. Exportação, camadas e funcionalidades extras.
-9. Preparação para build e distribuição.
+* **Salvar Screenshot**:
 
----
+  * Salvar o conteúdo da tela junto com as anotações em PNG (melhorar integração com offsets e dimensionamento da tela).
+* **Melhorias no Eraser-Paint**:
 
-## 📚 Tecnologias e Bibliotecas
+  * Tornar a borracha permanente, removendo pixels diretamente dos strokes.
+* **Aprimoramento do Pan/Draw**:
 
-- [Electron](https://www.electronjs.org/) → aplicação desktop moderna.
-- [MediaPipe Hands](https://google.github.io/mediapipe/solutions/hands) → reconhecimento de gestos de mão.
-- HTML5 Canvas → desenho de strokes.
-- CSS3 → UI moderna e animações.
-- Node.js → backend e gerenciamento de janelas / atalhos globais.
+  * Corrigir offsets residuais ao alternar entre Pan e Draw, evitando deslocamento incorreto dos strokes durante o desenho.
 
 ---
 
-## ⚡ Próximos Passos
+## ⚠️ Pontos a Corrigir / Em Desenvolvimento
 
-1. Criar janelas Whiteboard e Overlay básicas.  
-2. Implementar canvas e motor de desenho com strokes.  
-3. Implementar undo/redo e toolbar inicial.  
+1. **Salvar Screenshot**
+
+   * Atualmente salva a tela, mas pode haver distorções devido ao dimensionamento do canvas e offsets.
+
+2. **Eraser-Paint**
+
+   * Apenas remove visualmente pixels da tela, mas não altera permanentemente os strokes.
+
+3. **Pan**
+
+   * Após usar o Pan, alternar para Draw pode fazer com que os strokes sejam desenhados “deslocados” até finalizar a linha.
 
 ---
+
+## 📂 Estrutura do Projeto
+
+```
+overlay-annotator/
+│
+├─ index.html
+├─ css/
+│  ├─ style.css
+│  └─ overlay.css
+├─ scripts/
+│  ├─ app.js
+│  ├─ overlayApp.js
+│  ├─ canvasManager.js
+│  └─ eventManager.js
+└─ README.md
+```
+
+---
+
+## ⚡ Como Executar
+
+1. Clonar o repositório.
+2. Abrir o `index.html` em um navegador (ou executar via Electron para integração com captura de tela).
+3. Interagir com a toolbar:
+
+   * Selecionar ferramentas (Draw, Pan, Eraser)
+   * Ajustar cor e espessura
+   * Salvar ou limpar a tela

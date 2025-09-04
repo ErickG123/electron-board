@@ -4,6 +4,7 @@ class CanvasManager {
         this.ctx = canvas.getContext("2d");
 
         this.strokes = [];
+        this.overlayStrokes = [];
         this.redoStack = [];
 
         this.offsetX = 0;
@@ -15,43 +16,45 @@ class CanvasManager {
         this.tempCtx = this.tempCanvas.getContext("2d");
     }
 
-    addStroke(stroke) {
-        if (!stroke || !stroke.points || stroke.points.length === 0) return;
-
-        this.strokes.push(stroke);
+    addStroke(shape) {
+        if (!shape) return;
+        this.strokes.push(shape);
         this.redoStack = [];
         this.redraw();
     }
 
-    addStrokeOverlay(stroke, temporario = false) {
+    addStrokeOverlay(shape, temporario = false) {
         if (temporario) {
-            stroke.draw(this.ctx, this.offsetX, this.offsetY);
+            this.overlayStrokes.push(shape);
+            this.redraw();
         } else {
-            this.addStroke(stroke);
+            this.addStroke(shape);
         }
     }
 
     redraw() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        this.strokes.forEach(stroke => stroke.draw(this.ctx, this.offsetX, this.offsetY));
+
+        this.strokes.forEach(s => s.draw(this.ctx, this.offsetX, this.offsetY));
+
+        this.overlayStrokes.forEach(s => s.draw(this.ctx, this.offsetX, this.offsetY));
     }
 
     undo() {
-        if (this.strokes.length === 0) return;
-        const stroke = this.strokes.pop();
-        this.redoStack.push(stroke);
+        if (!this.strokes.length) return;
+        this.redoStack.push(this.strokes.pop());
         this.redraw();
     }
 
     redo() {
-        if (this.redoStack.length === 0) return;
-        const stroke = this.redoStack.pop();
-        this.strokes.push(stroke);
+        if (!this.redoStack.length) return;
+        this.strokes.push(this.redoStack.pop());
         this.redraw();
     }
 
     clearAll() {
         this.strokes = [];
+        this.overlayStrokes = [];
         this.redoStack = [];
         this.redraw();
     }
@@ -60,11 +63,18 @@ class CanvasManager {
         const half = size / 2;
 
         this.tempCtx.clearRect(0, 0, this.tempCanvas.width, this.tempCanvas.height);
-        this.strokes.forEach(stroke => stroke.draw(this.tempCtx, this.offsetX, this.offsetY));
+        this.strokes.forEach(s => s.draw(this.tempCtx, this.offsetX, this.offsetY));
 
         this.tempCtx.clearRect(x - half, y - half, size, size);
 
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.ctx.drawImage(this.tempCanvas, 0, 0);
+
+        this.overlayStrokes.forEach(s => s.draw(this.ctx, this.offsetX, this.offsetY));
+    }
+
+    clearOverlay() {
+        this.overlayStrokes = [];
+        this.redraw();
     }
 }
