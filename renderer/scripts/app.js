@@ -10,6 +10,7 @@ const btnUndo = document.getElementById('btnUndo');
 const btnRedo = document.getElementById('btnRedo');
 const btnSave = document.getElementById('btnSave');
 
+const btnSelect = document.getElementById('btnSelect');
 const btnDraw = document.getElementById('btnDraw');
 const btnRectangle = document.getElementById('btnRectangle');
 const btnCircle = document.getElementById('btnCircle');
@@ -28,13 +29,14 @@ widthSlider.value = window.currentWidth;
 widthValue.textContent = window.currentWidth;
 
 function updateActiveToolButton() {
-    [btnDraw, btnRectangle, btnCircle, btnLine, btnText, btnPan, btnEraserPaint, btnEraserStroke].forEach(btn => btn.classList.remove('active'));
+    [btnDraw, btnRectangle, btnCircle, btnLine, btnText, btnSelect, btnPan, btnEraserPaint, btnEraserStroke].forEach(btn => btn.classList.remove('active'));
     switch (window.currentTool) {
         case 'draw': btnDraw.classList.add('active'); break;
         case 'rectangle': btnRectangle.classList.add('active'); break;
         case 'circle': btnCircle.classList.add('active'); break;
         case 'line': btnLine.classList.add('active'); break;
         case 'text': btnText.classList.add('active'); break;
+        case 'select': btnSelect.classList.add('active'); break;
         case 'pan': btnPan.classList.add('active'); break;
         case 'eraser-paint': btnEraserPaint.classList.add('active'); break;
         case 'eraser-stroke': btnEraserStroke.classList.add('active'); break;
@@ -51,11 +53,10 @@ btnUndo.addEventListener('click', () => window.canvasManager.undo());
 btnRedo.addEventListener('click', () => window.canvasManager.redo());
 btnSave.addEventListener('click', window.saveScreenWithOverlay);
 
-[btnDraw, btnRectangle, btnCircle, btnLine, btnText, btnPan, btnEraserPaint, btnEraserStroke].forEach((btn, i) => {
-    const tools = ['draw', 'rectangle', 'circle', 'line', 'text', 'pan', 'eraser-paint', 'eraser-stroke'];
+[btnDraw, btnRectangle, btnCircle, btnLine, btnText, btnSelect, btnPan, btnEraserPaint, btnEraserStroke].forEach((btn, i) => {
+    const tools = ['draw', 'rectangle', 'circle', 'line', 'text', 'select', 'pan', 'eraser-paint', 'eraser-stroke'];
 
     btn.addEventListener('click', () => {
-        console.log("Click: ", tools[i]);
         window.currentTool = tools[i];
         updateActiveToolButton();
     });
