@@ -14,7 +14,7 @@ body {
     top: 12px;
     left: 12px;
     z-index: 10000;
-    width: 220px;
+    width: 240px;
     background: rgba(30, 30, 30, 0.65);
     color: #fff;
     border-radius: 10px;
@@ -22,6 +22,13 @@ body {
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
     user-select: none;
     font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    transition: opacity .22s ease, transform .22s ease;
+}
+
+.toolbar[hidden] {
+    opacity: 0;
+    transform: translateY(-8px);
+    pointer-events: none;
 }
 
 .toolbar-head {
@@ -47,15 +54,36 @@ body {
     padding: 4px;
 }
 
+.toolbar-head button.active {
+    background: rgba(245, 245, 245, 0.307)
+}
+
 .toolbar-body {
     padding: 8px;
     display: flex;
-    gap: 8px;
-    align-items: center;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.tools,
+.controls,
+.actions {
+    display: flex;
+    gap: 6px;
     flex-wrap: wrap;
 }
 
-.control input[type="color"] {
+.tools button,
+.actions button {
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    color: #fff;
+    border-radius: 6px;
+    padding: 6px 8px;
+    cursor: pointer;
+}
+
+.controls input[type="color"] {
     width: 36px;
     height: 28px;
     padding: 0;
@@ -64,7 +92,7 @@ body {
     cursor: pointer;
 }
 
-.control.range {
+.controls .range {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -79,29 +107,4 @@ body {
     color: #ddd;
     min-width: 22px;
     text-align: center;
-}
-
-.actions {
-    margin-left: auto;
-    display: flex;
-    gap: 6px;
-}
-
-.actions button {
-    background: rgba(255, 255, 255, 0.12);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    color: #fff;
-    border-radius: 6px;
-    padding: 6px 8px;
-    cursor: pointer;
-}
-
-.toolbar {
-    transition: opacity .22s ease, transform .22s ease;
-}
-
-.toolbar[hidden] {
-    opacity: 0;
-    transform: translateY(-8px);
-    pointer-events: none;
 }

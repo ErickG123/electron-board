@@ -9,23 +9,21 @@ window.isDrawingMode = false;
 window.overlayMode = "persistente";
 window.currentColor = "#000000";
 window.currentWidth = 2;
+window.currentTool = "draw";
 
 function setCanvasPointerEvents(shouldCapture) {
     canvas.style.pointerEvents = shouldCapture ? "auto" : "none";
 }
+setCanvasPointerEvents(window.isDrawingMode);
 
-console.log('electronAPI:', window.electronAPI);
-
-if (window.electronAPI && window.electronAPI.onDrawingModeChanged) {
-    window.electronAPI.onDrawingModeChanged((val) => {
+if (window.electronAPI) {
+    window.electronAPI.onDrawingModeChanged?.(val => {
         window.isDrawingMode = val;
         setCanvasPointerEvents(val);
         console.log("Renderer recebeu drawing-mode:", val);
     });
-}
 
-if (window.electronAPI && window.electronAPI.onOverlayModeChanged) {
-    window.electronAPI.onOverlayModeChanged((val) => {
+    window.electronAPI.onOverlayModeChanged?.(val => {
         window.overlayMode = val;
         console.log("Renderer recebeu overlay-mode:", val);
         if (val === "temporario") {
@@ -57,14 +55,12 @@ async function saveScreenWithOverlay() {
 
         outCtx.drawImage(screenImg, 0, 0, outCanvas.width, outCanvas.height);
 
-        const overlayCanvas = document.getElementById('overlay');
-
-        const sx = outCanvas.width / overlayCanvas.width;
-        const sy = outCanvas.height / overlayCanvas.height;
+        const sx = outCanvas.width / canvas.width;
+        const sy = outCanvas.height / canvas.height;
 
         outCtx.save();
         outCtx.scale(sx, sy);
-        outCtx.drawImage(overlayCanvas, 0, 0);
+        outCtx.drawImage(canvas, 0, 0);
         outCtx.restore();
 
         const finalDataUrl = outCanvas.toDataURL('image/png');
@@ -74,7 +70,6 @@ async function saveScreenWithOverlay() {
         a.click();
 
         console.log('Screenshot saved (client-side).');
-
     } catch (err) {
         console.error('Erro ao salvar screenshot:', err);
         alert('Erro ao capturar tela. Veja o console para detalhes.');
@@ -89,3 +84,4 @@ window.addEventListener("resize", () => {
 
 window.saveScreenWithOverlay = saveScreenWithOverlay;
 window.canvasManager = canvasManager;
+window.setCanvasPointerEvents = setCanvasPointerEvents;

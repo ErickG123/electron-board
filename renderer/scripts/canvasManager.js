@@ -5,50 +5,66 @@ class CanvasManager {
 
         this.strokes = [];
         this.redoStack = [];
+
+        this.offsetX = 0;
+        this.offsetY = 0;
+
+        this.tempCanvas = document.createElement("canvas");
+        this.tempCanvas.width = canvas.width;
+        this.tempCanvas.height = canvas.height;
+        this.tempCtx = this.tempCanvas.getContext("2d");
     }
 
     addStroke(stroke) {
+        if (!stroke || !stroke.points || stroke.points.length === 0) return;
+
         this.strokes.push(stroke);
         this.redoStack = [];
         this.redraw();
     }
 
     addStrokeOverlay(stroke, temporario = false) {
-        this.strokes.push(stroke);
-        this.redoStack = [];
-        this.redraw();
-
         if (temporario) {
-            setTimeout(() => {
-                this.strokes.pop();
-                this.redraw();
-            }, 1000);
-        }
-    }
-
-    undo() {
-        if (this.strokes.length > 0) {
-            const last = this.strokes.pop();
-
-            this.redoStack.push(last);
-            this.redraw()
-        }
-    }
-
-    redo() {
-        if (this.redoStack.length > 0) {
-            const stroke = this.redoStack.pop();
-
-            this.strokes.push(stroke);
-            this.redraw();
+            stroke.draw(this.ctx, this.offsetX, this.offsetY);
+        } else {
+            this.addStroke(stroke);
         }
     }
 
     redraw() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.strokes.forEach(stroke => stroke.draw(this.ctx, this.offsetX, this.offsetY));
+    }
 
-        for (let stroke of this.strokes) {
-            stroke.draw(this.ctx);
-        }
+    undo() {
+        if (this.strokes.length === 0) return;
+        const stroke = this.strokes.pop();
+        this.redoStack.push(stroke);
+        this.redraw();
+    }
+
+    redo() {
+        if (this.redoStack.length === 0) return;
+        const stroke = this.redoStack.pop();
+        this.strokes.push(stroke);
+        this.redraw();
+    }
+
+    clearAll() {
+        this.strokes = [];
+        this.redoStack = [];
+        this.redraw();
+    }
+
+    eraseArea(x, y, size) {
+        const half = size / 2;
+
+        this.tempCtx.clearRect(0, 0, this.tempCanvas.width, this.tempCanvas.height);
+        this.strokes.forEach(stroke => stroke.draw(this.tempCtx, this.offsetX, this.offsetY));
+
+        this.tempCtx.clearRect(x - half, y - half, size, size);
+
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.drawImage(this.tempCanvas, 0, 0);
     }
 }

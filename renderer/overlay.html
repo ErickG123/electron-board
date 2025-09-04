@@ -14,18 +14,27 @@
             <span class="title">Annotator</span>
             <button id="btnToggleDraw" title="Toggle Draw (Ctrl+Shift+D)">✏️</button>
             <button id="btnMode" title="Toggle Persist/Temp (Ctrl+Shift+T)">P</button>
-            <button id="btnClear" title="Limpar">🧽</button>
         </div>
 
         <div class="toolbar-body">
-            <label class="control">
-                <input id="colorPicker" type="color" value="#000000">
-            </label>
+            <div class="tools">
+                <button id="btnDraw" title="Desenhar">✏️</button>
+                <button id="btnPan" title="Mover Tela">✋</button>
+                <button id="btnEraserPaint" title="Borracha (pintar)">🩹</button>
+                <button id="btnEraserStroke" title="Borracha (apagar linha)">🧨</button>
+                <button id="btnClear" title="Limpar">🧽</button>
+            </div>
 
-            <label class="control range">
-                <input id="widthSlider" type="range" min="1" max="40" value="2">
-                <span id="widthValue">2</span>
-            </label>
+            <div class="controls">
+                <label>
+                    <input id="colorPicker" type="color" value="#000000">
+                </label>
+
+                <label class="range">
+                    <input id="widthSlider" type="range" min="1" max="40" value="2">
+                    <span id="widthValue">2</span>
+                </label>
+            </div>
 
             <div class="actions">
                 <button id="btnUndo" title="Undo (Ctrl+Z)">↶</button>
@@ -34,7 +43,6 @@
             </div>
         </div>
     </div>
-
 
     <canvas id="overlay"></canvas>
 

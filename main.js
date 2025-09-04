@@ -40,7 +40,7 @@ const createOverlay = () => {
     overlayWindow.loadFile(path.join(__dirname, "renderer/overlay.html"));
 
     overlayWindow.webContents.on('did-finish-load', () => {
-        // overlayWindow.webContents.openDevTools({ mode: 'detach' });
+        overlayWindow.webContents.openDevTools({ mode: 'detach' });
 
         overlayWindow.setIgnoreMouseEvents(true, { forward: true });
 
