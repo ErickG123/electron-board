@@ -8,7 +8,10 @@ class Shape {
         this.endX = startX;
         this.endY = startY;
         this.points = type === "draw" ? [{ x: startX, y: startY }] : [];
+
         this.text = text;
+        this.textBoxWidth = 200;
+        this.textBoxHeight = 0;
     }
 
     setEnd(x, y) {
@@ -22,17 +25,18 @@ class Shape {
         ctx.fillStyle = this.color;
         ctx.lineWidth = this.width;
         ctx.lineCap = "round";
-        ctx.beginPath();
 
         switch (this.type) {
             case "draw":
                 if (this.points.length < 2) return;
+                ctx.beginPath();
                 ctx.moveTo(this.points[0].x + offsetX, this.points[0].y + offsetY);
                 for (let i = 1; i < this.points.length; i++) {
                     ctx.lineTo(this.points[i].x + offsetX, this.points[i].y + offsetY);
                 }
                 ctx.stroke();
                 break;
+
             case "rectangle":
                 ctx.strokeRect(
                     this.startX + offsetX,
@@ -41,19 +45,48 @@ class Shape {
                     this.endY - this.startY
                 );
                 break;
+
             case "circle":
                 const radius = Math.hypot(this.endX - this.startX, this.endY - this.startY);
+                ctx.beginPath();
                 ctx.arc(this.startX + offsetX, this.startY + offsetY, radius, 0, 2 * Math.PI);
                 ctx.stroke();
                 break;
+
             case "line":
+                ctx.beginPath();
                 ctx.moveTo(this.startX + offsetX, this.startY + offsetY);
                 ctx.lineTo(this.endX + offsetX, this.endY + offsetY);
                 ctx.stroke();
                 break;
+
             case "text":
                 ctx.font = `${this.width * 5}px Arial`;
-                ctx.fillText(this.text, this.startX + offsetX, this.startY + offsetY);
+                ctx.textBaseline = "top";
+                ctx.fillStyle = this.color;
+
+                const words = this.text.split(" ");
+                let line = "";
+                let y = this.startY + offsetY;
+                const lineHeight = this.width * 6;
+                this.textBoxHeight = 0;
+                const maxWidth = this.textBoxWidth;
+
+                for (let i = 0; i < words.length; i++) {
+                    const testLine = line + words[i] + " ";
+                    const metrics = ctx.measureText(testLine);
+                    if (metrics.width > maxWidth && line !== "") {
+                        ctx.fillText(line, this.startX + offsetX, y);
+                        line = words[i] + " ";
+                        y += lineHeight;
+                        this.textBoxHeight += lineHeight;
+                    } else {
+                        line = testLine;
+                    }
+                }
+
+                ctx.fillText(line, this.startX + offsetX, y);
+                this.textBoxHeight += lineHeight;
                 break;
         }
     }
@@ -66,22 +99,25 @@ class Shape {
                         return true;
                 }
                 break;
+
             case "rectangle":
                 return x >= Math.min(this.startX, this.endX) &&
                     x <= Math.max(this.startX, this.endX) &&
                     y >= Math.min(this.startY, this.endY) &&
                     y <= Math.max(this.startY, this.endY);
+
             case "circle":
                 const radius = Math.hypot(this.endX - this.startX, this.endY - this.startY);
                 return Math.hypot(x - this.startX, y - this.startY) <= radius;
+
             case "line":
                 return pointLineDistance(x, y, this.startX, this.startY, this.endX, this.endY) <= this.width / 2;
+
             case "text":
-                const approxWidth = ctxMeasureText(this.text, this.width);
-                const approxHeight = this.width * 5;
-                return x >= this.startX && x <= this.startX + approxWidth &&
-                    y >= this.startY - approxHeight && y <= this.startY;
+                return x >= this.startX && x <= this.startX + this.textBoxWidth &&
+                    y >= this.startY && y <= this.startY + this.textBoxHeight;
         }
+
         return false;
     }
 }
@@ -92,17 +128,10 @@ function pointLineDistance(px, py, x1, y1, x2, y2) {
     const len_sq = C * C + D * D;
     let param = len_sq !== 0 ? dot / len_sq : -1;
     let xx, yy;
+
     if (param < 0) { xx = x1; yy = y1; }
     else if (param > 1) { xx = x2; yy = y2; }
     else { xx = x1 + param * C; yy = y1 + param * D; }
+
     return Math.hypot(px - xx, py - yy);
-}
-
-function ctxMeasureText(text, fontSize) {
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-
-    ctx.font = `${fontSize * 5}px Arial`;
-
-    return ctx.measureText(text).width;
 }

@@ -108,3 +108,42 @@ body {
     min-width: 22px;
     text-align: center;
 }
+
+.overlay-text-input {
+    position: fixed;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 18px;
+    line-height: 1.2;
+    color: #000;
+    background: rgba(255, 255, 255, 0.95);
+    border: 2px solid rgba(0, 0, 0, 0.18);
+    border-radius: 8px;
+    padding: 6px 8px;
+    min-width: 80px;
+    max-width: 500px;
+    max-height: 80vh;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    z-index: 10001;
+    resize: none;
+    overflow: hidden;
+    outline: none;
+    caret-color: auto;
+    box-sizing: border-box;
+}
+
+.overlay-text-input:focus {
+    border-color: rgba(0, 0, 0, 0.6);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.20);
+}
+
+.overlay-text-input::placeholder {
+    color: rgba(0, 0, 0, 0.35);
+}
+
+@media (hover: none) and (pointer: coarse) {
+    .overlay-text-input {
+        min-width: 120px;
+        padding: 10px 12px;
+        font-size: 20px;
+    }
+}
