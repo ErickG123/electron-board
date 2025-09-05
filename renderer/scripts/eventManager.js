@@ -1,4 +1,3 @@
-// eventManager.js
 class EventManager {
     constructor(canvas, canvasManager, options = {}) {
         this.canvas = canvas;
@@ -11,17 +10,16 @@ class EventManager {
         this.isPanning = false;
         this.startPan = { x: 0, y: 0 };
 
-        // selection/move/resize/rotate
         this.isSelectingArea = false;
-        this.selectionStart = null; // screen coords {x,y}
-        this.selectionRect = null;  // {x,y,w,h} in canvas coords
+        this.selectionStart = null;
+        this.selectionRect = null;
 
         this.isMovingSelected = false;
-        this.moveStart = null; // canvas coords
+        this.moveStart = null;
 
         this.isResizingSelected = false;
         this.resizeHandle = null;
-        this.resizeStart = null; // screen coords
+        this.resizeStart = null;
 
         this.isRotatingSelected = false;
         this.rotateStartAngle = null;
@@ -31,75 +29,74 @@ class EventManager {
 
     getMousePos(evt) {
         const rect = this.canvas.getBoundingClientRect();
+        const wrapperScale = window.globalScale || 1;
+        const sx = (evt.clientX - rect.left) / wrapperScale;
+        const sy = (evt.clientY - rect.top) / wrapperScale;
+
+        const world = this.canvasManager.screenToWorld(sx, sy);
         return {
-            x: evt.clientX - rect.left,
-            y: evt.clientY - rect.top,
-            clientX: evt.clientX,
-            clientY: evt.clientY,
+            sx, sy,
+            wx: world.x, wy: world.y,
+            clientX: evt.clientX, clientY: evt.clientY,
             rect
         };
     }
 
     registerEvents() {
-        // MOUSE DOWN
         this.canvas.addEventListener("mousedown", (e) => {
             const pos = this.getMousePos(e);
-            const canvasX = pos.x - this.canvasManager.offsetX;
-            const canvasY = pos.y - this.canvasManager.offsetY;
+            const canvasWX = pos.wx, canvasWY = pos.wy;
+
+            if (document.querySelector('.overlay-text-input')) {
+                return;
+            }
 
             if (window.currentTool === "select") {
-                // if there is a selection and handle hit
-                const handle = this.canvasManager.hitHandleAt(pos.clientX, pos.clientY);
+                const handle = this.canvasManager.hitHandleAt(pos.sx, pos.sy);
                 if (handle) {
                     if (handle === 'rotate') {
                         this.isRotatingSelected = true;
-                        // compute center of group or single selected
                         const gb = this.canvasManager.selectedIndices.length > 1 ? this.canvasManager._getGroupBounds() : this.canvasManager.strokes[this.canvasManager.selectedIndices[0]].getBounds();
                         const cx = gb.x + gb.w / 2, cy = gb.y + gb.h / 2;
                         this.rotateStartAngle = Math.atan2(pos.clientY - (cy + this.canvasManager.offsetY), pos.clientX - (cx + this.canvasManager.offsetX));
                         return;
                     } else {
-                        // resize
                         this.isResizingSelected = true;
                         this.resizeHandle = handle;
-                        this.resizeStart = { screenX: pos.clientX, screenY: pos.clientY };
+                        this.resizeStart = { screenX: pos.sx, screenY: pos.sy };
                         return;
                     }
                 }
 
-                // if clicked on a shape => start move
-                const idx = this.canvasManager.selectShapeAt(canvasX, canvasY);
+                const idx = this.canvasManager.selectShapeAt(canvasWX, canvasWY);
                 if (idx >= 0) {
-                    // start moving selected shape(s)
                     this.isMovingSelected = true;
-                    this.moveStart = { x: canvasX, y: canvasY };
+                    this.moveStart = { x: canvasWX, y: canvasWY };
                     return;
                 }
 
-                // else start area selection (marquee)
                 this.isSelectingArea = true;
-                this.selectionStart = { clientX: pos.clientX, clientY: pos.clientY };
+                this.selectionStart = { sx: pos.sx, sy: pos.sy };
                 this.selectionRect = null;
                 return;
             }
 
-            // not in select mode: previous behaviors
             switch (window.currentTool) {
                 case "pan":
                     this.isPanning = true;
-                    this.startPan = { x: pos.x, y: pos.y };
+                    this.startPan = { x: pos.sx, y: pos.sy };
                     break;
 
                 case "eraser-stroke":
                     this.canvasManager.strokes = this.canvasManager.strokes.filter(
-                        s => !s.hitTest(canvasX, canvasY)
+                        s => !s.hitTest || !s.hitTest(canvasWX, canvasWY)
                     );
                     this.canvasManager.redraw();
                     break;
 
                 case "eraser-paint":
                     this.isDrawing = true;
-                    this.canvasManager.eraseArea(pos.x, pos.y, window.currentWidth || 20);
+                    this.canvasManager.eraseArea(pos.sx, pos.sy, window.currentWidth || 20);
                     break;
 
                 case "text":
@@ -112,30 +109,26 @@ class EventManager {
                         window.currentTool,
                         window.currentColor,
                         window.currentWidth,
-                        canvasX,
-                        canvasY
+                        canvasWX,
+                        canvasWY
                     );
             }
         });
 
-        // MOUSE MOVE
         this.canvas.addEventListener("mousemove", (e) => {
             const pos = this.getMousePos(e);
-            const canvasX = pos.x - this.canvasManager.offsetX;
-            const canvasY = pos.y - this.canvasManager.offsetY;
+            const canvasWX = pos.wx, canvasWY = pos.wy;
 
-            // PAN
             if (this.isPanning) {
-                const dx = pos.x - this.startPan.x;
-                const dy = pos.y - this.startPan.y;
+                const dx = pos.sx - this.startPan.x;
+                const dy = pos.sy - this.startPan.y;
                 this.canvasManager.offsetX += dx;
                 this.canvasManager.offsetY += dy;
-                this.startPan = pos;
+                this.startPan = { x: pos.sx, y: pos.sy };
                 this.canvasManager.redraw();
                 return;
             }
 
-            // rotating selected
             if (this.isRotatingSelected) {
                 const gb = this.canvasManager.selectedIndices.length > 1 ? this.canvasManager._getGroupBounds() : this.canvasManager.strokes[this.canvasManager.selectedIndices[0]].getBounds();
                 const cx = gb.x + gb.w / 2, cy = gb.y + gb.h / 2;
@@ -146,92 +139,66 @@ class EventManager {
                 return;
             }
 
-            // resizing selected
             if (this.isResizingSelected) {
-                const screenDx = pos.clientX - this.resizeStart.screenX;
-                const screenDy = pos.clientY - this.resizeStart.screenY;
-                // convert screen deltas to approximate canvas deltas (1:1)
-                const dx = screenDx;
-                const dy = screenDy;
-                this.canvasManager.resizeSelected(this.resizeHandle, dx, dy);
-                this.resizeStart = { screenX: pos.clientX, screenY: pos.clientY };
+                const screenDx = pos.sx - this.resizeStart.screenX;
+                const screenDy = pos.sy - this.resizeStart.screenY;
+                this.canvasManager.resizeSelected(this.resizeHandle, screenDx, screenDy);
+                this.resizeStart = { screenX: pos.sx, screenY: pos.sy };
                 return;
             }
 
-            // moving selected
             if (this.isMovingSelected) {
-                const dx = canvasX - this.moveStart.x;
-                const dy = canvasY - this.moveStart.y;
+                const dx = canvasWX - this.moveStart.x;
+                const dy = canvasWY - this.moveStart.y;
                 this.canvasManager.moveSelectedBy(dx, dy);
-                this.moveStart = { x: canvasX, y: canvasY };
+                this.moveStart = { x: canvasWX, y: canvasWY };
                 return;
             }
 
-            // selecting area (marquee)
             if (this.isSelectingArea) {
-                // draw temporary selection rectangle on top of canvas
-                const sx = this.selectionStart.clientX;
-                const sy = this.selectionStart.clientY;
-                const ex = pos.clientX;
-                const ey = pos.clientY;
+                const sx = this.selectionStart.sx, sy = this.selectionStart.sy;
+                const ex = pos.sx, ey = pos.sy;
                 const left = Math.min(sx, ex), top = Math.min(sy, ey), w = Math.abs(ex - sx), h = Math.abs(ey - sy);
 
-                // convert viewport rect to canvas coords
-                const rect = this.canvas.getBoundingClientRect();
-                const canvasRect = {
-                    x: left - rect.left - this.canvasManager.offsetX,
-                    y: top - rect.top - this.canvasManager.offsetY,
-                    w: w,
-                    h: h
+                const canvasRectWorld = {
+                    x: (left - this.canvasManager.offsetX) / this.canvasManager.zoom,
+                    y: (top - this.canvasManager.offsetY) / this.canvasManager.zoom,
+                    w: w / this.canvasManager.zoom,
+                    h: h / this.canvasManager.zoom
                 };
-                this.selectionRect = canvasRect;
+                this.selectionRect = canvasRectWorld;
 
-                // redraw and overlay rectangle
                 this.canvasManager.redraw();
-                // draw marquee on top
                 const ctx = this.canvasManager.ctx;
                 ctx.save();
                 ctx.setLineDash([4, 3]);
                 ctx.strokeStyle = 'rgba(30,144,255,0.9)';
                 ctx.lineWidth = 1;
-                ctx.strokeRect(left - rect.left, top - rect.top, w, h);
+                ctx.strokeRect(left, top, w, h);
                 ctx.restore();
                 return;
             }
 
-            // If not in any of above and not drawing, nothing
             if (!this.isDrawing) return;
 
-            // ERASER PAINT
             if (window.currentTool === "eraser-paint") {
                 const size = window.currentWidth || 20;
-                this.canvasManager.eraseArea(pos.x, pos.y, size);
+                this.canvasManager.eraseArea(pos.sx, pos.sy, size);
                 return;
             }
 
-            // DRAW / shapes preview
             if (this.currentShape && ["draw", "rectangle", "circle", "line"].includes(window.currentTool)) {
-                this.currentShape.setEnd(canvasX, canvasY);
-                this.canvasManager.redraw();
-                this.currentShape.draw(this.canvasManager.ctx, this.canvasManager.offsetX, this.canvasManager.offsetY);
+                this.currentShape.setEnd(canvasWX, canvasWY);
+                this.canvasManager.redraw(this.currentShape);
             }
         });
 
-        // MOUSE UP
         this.canvas.addEventListener("mouseup", (e) => {
-            // finish pan
             if (this.isPanning) { this.isPanning = false; return; }
-
-            // finish rotate
             if (this.isRotatingSelected) { this.isRotatingSelected = false; this.rotateStartAngle = null; return; }
-
-            // finish resize
             if (this.isResizingSelected) { this.isResizingSelected = false; this.resizeHandle = null; this.resizeStart = null; return; }
-
-            // finish move
             if (this.isMovingSelected) { this.isMovingSelected = false; this.moveStart = null; return; }
 
-            // finish selection area: compute which shapes intersect selectionRect
             if (this.isSelectingArea) {
                 this.isSelectingArea = false;
                 if (this.selectionRect) {
@@ -256,25 +223,15 @@ class EventManager {
             }
         });
 
-        // KEYBOARD handlers
         window.addEventListener("keydown", (e) => {
-            // Undo / Redo
-            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
-                this.canvasManager.undo();
-                return;
-            }
-            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "y") {
-                this.canvasManager.redo();
-                return;
-            }
+            if ((e.ctrlKey || e.metaKey) && e.key === "z") this.canvasManager.undo();
+            if ((e.ctrlKey || e.metaKey) && e.key === "y") this.canvasManager.redo();
 
-            // Delete selected
             if (e.key === "Delete" || e.key === "Backspace") {
                 this.canvasManager.deleteSelected();
                 return;
             }
 
-            // Escape: cancel selection/modes
             if (e.key === "Escape") {
                 this.isMovingSelected = false;
                 this.isResizingSelected = false;
@@ -286,7 +243,6 @@ class EventManager {
         });
     }
 
-    // createTextBox: same as before (position fixed, creates shape on save). Kept unchanged for brevity
     createTextBox(evt) {
         if (document.querySelector(".overlay-text-input")) {
             const existing = document.querySelector(".overlay-text-input");
@@ -295,10 +251,12 @@ class EventManager {
         }
 
         const rect = this.canvas.getBoundingClientRect();
+        const wrapperScale = window.globalScale || 1;
         const clientX = evt.clientX;
         const clientY = evt.clientY;
-        const canvasX = clientX - rect.left - this.canvasManager.offsetX;
-        const canvasY = clientY - rect.top - this.canvasManager.offsetY;
+        const canvasX = (clientX - rect.left) / wrapperScale;
+        const canvasY = (clientY - rect.top) / wrapperScale;
+        const world = this.canvasManager.screenToWorld(canvasX, canvasY);
 
         const input = document.createElement("textarea");
         input.classList.add("overlay-text-input");
@@ -338,8 +296,8 @@ class EventManager {
                     "text",
                     window.currentColor,
                     window.currentWidth,
-                    canvasX,
-                    canvasY,
+                    world.x,
+                    world.y,
                     textValue
                 );
 
@@ -350,7 +308,7 @@ class EventManager {
                 }
             }
 
-            input.removeEventListener("input", adjustHeight);
+            input.addEventListener("input", adjustHeight, { once: true });
             if (document.body.contains(input)) document.body.removeChild(input);
         };
 

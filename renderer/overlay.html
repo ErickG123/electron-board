@@ -9,47 +9,48 @@
     <link rel="stylesheet" href="css/overlay.css">
 </head>
 <body>
-    <div id="toolbar" class="toolbar">
-        <div class="toolbar-head" id="toolbarHead">
-            <span class="title">Annotator</span>
-            <button id="btnToggleDraw" title="Toggle Draw (Ctrl+Shift+D)">✏️</button>
-            <button id="btnMode" title="Toggle Persist/Temp (Ctrl+Shift+T)">P</button>
-        </div>
-
-        <div class="toolbar-body">
-            <div class="tools">
-                <button id="btnSelect" title="Selecionar/Editar">🔲</button>
-                <button id="btnDraw" title="Desenhar">✏️</button>
-                <button id="btnRectangle" title="Retângulo">▭</button>
-                <button id="btnCircle" title="Círculo">⚪</button>
-                <button id="btnLine" title="Linha">/</button>
-                <button id="btnText" title="Texto">🅰️</button>
-                <button id="btnPan" title="Mover Tela">✋</button>
-                <button id="btnEraserPaint" title="Borracha (pintar)">🩹</button>
-                <button id="btnEraserStroke" title="Borracha (apagar linha)">🧨</button>
-                <button id="btnClear" title="Limpar">🧽</button>
-            </div>            
-
-            <div class="controls">
-                <label>
-                    <input id="colorPicker" type="color" value="#000000">
-                </label>
-
-                <label class="range">
-                    <input id="widthSlider" type="range" min="1" max="40" value="2">
-                    <span id="widthValue">2</span>
-                </label>
+    <div id="overlayRoot" style="transform-origin: 0 0;">
+        <div id="toolbar" class="toolbar">
+            <div class="toolbar-head" id="toolbarHead">
+                <span class="title">Annotator</span>
+                <button id="btnToggleDraw" title="Toggle Draw (Ctrl+Shift+D)">✏️</button>
+                <button id="btnMode" title="Toggle Persist/Temp (Ctrl+Shift+T)">P</button>
             </div>
 
-            <div class="actions">
-                <button id="btnUndo" title="Undo (Ctrl+Z)">↶</button>
-                <button id="btnRedo" title="Redo (Ctrl+Y)">↷</button>
-                <button id="btnSave" title="Salvar PNG">💾</button>
+            <div class="toolbar-body">
+                <div class="tools">
+                    <button id="btnDraw" title="Desenhar">✏️</button>
+                    <button id="btnRectangle" title="Retângulo">▭</button>
+                    <button id="btnCircle" title="Círculo">⚪</button>
+                    <button id="btnLine" title="Linha">/</button>
+                    <button id="btnText" title="Texto">🅰️</button>
+                    <button id="btnPan" title="Mover Tela">✋</button>
+                    <button id="btnEraserPaint" title="Borracha (pintar)">🩹</button>
+                    <button id="btnEraserStroke" title="Borracha (apagar linha)">🧨</button>
+                    <button id="btnClear" title="Limpar">🧽</button>
+                </div>            
+
+                <div class="controls">
+                    <label>
+                        <input id="colorPicker" type="color" value="#000000">
+                    </label>
+
+                    <label class="range">
+                        <input id="widthSlider" type="range" min="1" max="40" value="2">
+                        <span id="widthValue">2</span>
+                    </label>
+                </div>
+
+                <div class="actions">
+                    <button id="btnUndo" title="Undo (Ctrl+Z)">↶</button>
+                    <button id="btnRedo" title="Redo (Ctrl+Y)">↷</button>
+                    <button id="btnSave" title="Salvar PNG">💾</button>
+                </div>
             </div>
         </div>
+
+        <canvas id="overlay"></canvas>
     </div>
-
-    <canvas id="overlay"></canvas>
 
     <script src="scripts/shape.js"></script>
     <script src="scripts/canvasManager.js"></script>

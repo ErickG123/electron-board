@@ -7,6 +7,7 @@ class Shape {
         this.startY = startY;
         this.endX = startX;
         this.endY = startY;
+
         this.points = type === "draw" ? [{ x: startX, y: startY }] : [];
 
         this.text = text;
@@ -16,6 +17,14 @@ class Shape {
         this.rotation = 0;
     }
 
+    static fromPoints(color, width, points) {
+        const s = new Shape('draw', color, width, points[0].x, points[0].y);
+        s.points = points.slice();
+        const last = points[points.length - 1];
+        s.endX = last.x; s.endY = last.y;
+        return s;
+    }
+
     setEnd(x, y) {
         this.endX = x;
         this.endY = y;
@@ -23,15 +32,9 @@ class Shape {
     }
 
     moveBy(dx, dy) {
-        this.startX += dx;
-        this.startY += dx ? dy : dy;
-        this.startX += 0;
-
-        this.startX += 0;
-        this.endX += dx;
-        this.endY += dy;
-
-        if (this.type === "draw") {
+        this.startX += dx; this.startY += dy;
+        this.endX += dx; this.endY += dy;
+        if (this.type === 'draw') {
             this.points = this.points.map(p => ({ x: p.x + dx, y: p.y + dy }));
         }
     }
@@ -55,13 +58,11 @@ class Shape {
                 this.startX = this.points[0].x;
                 this.startY = this.points[0].y;
                 const last = this.points[this.points.length - 1];
-                this.endX = last.x;
-                this.endY = last.y;
+                this.endX = last.x; this.endY = last.y;
             }
         } else {
             const s = rotatePoint(this.startX, this.startY);
             const e = rotatePoint(this.endX, this.endY);
-
             this.startX = s.x; this.startY = s.y;
             this.endX = e.x; this.endY = e.y;
         }
@@ -85,8 +86,7 @@ class Shape {
                     maxY = Math.max(maxY, p.y);
                 });
                 const pad = this.width / 2;
-                const box = { x: minX - pad, y: minY - pad, w: (maxX - minX) + pad * 2, h: (maxY - minY) + pad * 2 };
-                return this._boundsWithRotation(box);
+                return this._boundsWithRotation({ x: minX - pad, y: minY - pad, w: (maxX - minX) + pad * 2, h: (maxY - minY) + pad * 2 });
             }
 
             case "rectangle": {
@@ -117,10 +117,12 @@ class Shape {
                 return this._boundsWithRotation({ x: this.startX, y: this.startY, w, h });
             }
         }
+
         return { x: this.startX, y: this.startY, w: Math.abs(this.endX - this.startX), h: Math.abs(this.endY - this.startY) };
     }
 
     _boundsWithRotation(box) {
+        if (!this.rotation) return box;
         const cx = box.x + box.w / 2;
         const cy = box.y + box.h / 2;
         const corners = [
@@ -129,7 +131,6 @@ class Shape {
             { x: box.x + box.w, y: box.y + box.h },
             { x: box.x, y: box.y + box.h }
         ];
-        if (!this.rotation) return box;
         const rcorners = corners.map(pt => Shape._rotatePoint(pt.x, pt.y, cx, cy, this.rotation));
         let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
         rcorners.forEach(p => { minX = Math.min(minX, p.x); minY = Math.min(minY, p.y); maxX = Math.max(maxX, p.x); maxY = Math.max(maxY, p.y); });
@@ -277,7 +278,6 @@ class Shape {
         const angle = this.rotation || 0;
 
         const inv = Shape._rotatePoint(x, y, cx, cy, -angle);
-
         const lx = inv.x, ly = inv.y;
 
         switch (this.type) {
@@ -310,9 +310,11 @@ class Shape {
         return false;
     }
 
-    hitTestHandle(screenX, screenY, offsetX = 0, offsetY = 0, handleSize = 10) {
+    hitTestHandle(screenX, screenY, worldToScreenFn, handleSize = 10) {
+        if (!worldToScreenFn) return null;
+
         const bounds = this.getBounds();
-        const x = bounds.x + offsetX, y = bounds.y + offsetY, w = bounds.w, h = bounds.h;
+        const x = bounds.x, y = bounds.y, w = bounds.w, h = bounds.h;
         const handles = [
             { name: 'nw', x: x, y: y },
             { name: 'n', x: x + w / 2, y: y },
@@ -324,29 +326,54 @@ class Shape {
             { name: 'w', x: x, y: y + h / 2 }
         ];
 
-        const cx = x + w / 2;
-        const cy = y + h / 2;
+        const cx = x + w / 2, cy = y + h / 2;
         const angle = this.rotation || 0;
 
-        const transformed = handles.map(hp => {
+        for (let hp of handles) {
             const pt = Shape._rotatePoint(hp.x, hp.y, cx, cy, angle);
-            return { name: hp.name, x: pt.x, y: pt.y };
-        });
-
-        for (let hpos of transformed) {
-            if (screenX >= hpos.x - handleSize / 2 && screenX <= hpos.x + handleSize / 2 &&
-                screenY >= hpos.y - handleSize / 2 && screenY <= hpos.y + handleSize / 2) {
-                return hpos.name;
+            const screenPt = worldToScreenFn(pt.x, pt.y);
+            if (screenX >= screenPt.x - handleSize / 2 && screenX <= screenPt.x + handleSize / 2 &&
+                screenY >= screenPt.y - handleSize / 2 && screenY <= screenPt.y + handleSize / 2) {
+                return hp.name;
             }
         }
 
-        const topCenter = Shape._rotatePoint(x + w / 2, y - 20, cx, cy, angle);
-        const hx = topCenter.x, hy = topCenter.y;
-        if (screenX >= hx - handleSize && screenX <= hx + handleSize && screenY >= hy - handleSize && screenY <= hy + handleSize) {
+        const rotHandle = Shape._rotatePoint(x + w / 2, y - 20, cx, cy, angle);
+        const rotScreen = worldToScreenFn(rotHandle.x, rotHandle.y);
+        if (screenX >= rotScreen.x - handleSize && screenX <= rotScreen.x + handleSize &&
+            screenY >= rotScreen.y - handleSize && screenY <= rotScreen.y + handleSize) {
             return 'rotate';
         }
 
         return null;
+    }
+
+    toJSON() {
+        return {
+            type: this.type,
+            color: this.color,
+            width: this.width,
+            startX: this.startX,
+            startY: this.startY,
+            endX: this.endX,
+            endY: this.endY,
+            points: this.points,
+            text: this.text,
+            textBoxWidth: this.textBoxWidth,
+            textBoxHeight: this.textBoxHeight,
+            rotation: this.rotation
+        };
+    }
+
+    static fromJSON(obj) {
+        const s = new Shape(obj.type, obj.color, obj.width, obj.startX, obj.startY, obj.text || "");
+        s.endX = obj.endX;
+        s.endY = obj.endY;
+        s.points = obj.points ? obj.points.map(p => ({ x: p.x, y: p.y })) : (s.type === 'draw' ? [{ x: s.startX, y: s.startY }] : []);
+        s.textBoxWidth = obj.textBoxWidth || s.textBoxWidth;
+        s.textBoxHeight = obj.textBoxHeight || s.textBoxHeight;
+        s.rotation = obj.rotation || 0;
+        return s;
     }
 }
 

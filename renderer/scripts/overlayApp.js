@@ -10,6 +10,7 @@ window.overlayMode = "persistente";
 window.currentColor = "#000000";
 window.currentWidth = 2;
 window.currentTool = "draw";
+window.globalScale = 1;
 
 function setCanvasPointerEvents(shouldCapture) {
     canvas.style.pointerEvents = shouldCapture ? "auto" : "none";
@@ -26,7 +27,12 @@ if (window.electronAPI) {
     window.electronAPI.onOverlayModeChanged?.(val => {
         window.overlayMode = val;
         console.log("Renderer recebeu overlay-mode:", val);
-        canvasManager.redraw();
+
+        if (val === "temporario") {
+            canvasManager.strokes = [];
+            canvasManager.redoStack = [];
+            canvasManager.redraw();
+        }
     });
 }
 
@@ -81,3 +87,70 @@ window.addEventListener("resize", () => {
 window.saveScreenWithOverlay = saveScreenWithOverlay;
 window.canvasManager = canvasManager;
 window.setCanvasPointerEvents = setCanvasPointerEvents;
+
+function applyGlobalScale(scale) {
+    window.globalScale = scale;
+    const wrapper = document.getElementById('overlayRoot');
+
+    if (wrapper) {
+        wrapper.style.transform = `scale(${scale})`;
+    }
+}
+
+(function attachZoomHandler() {
+    const minZoom = 0.1;
+    const maxZoom = 10;
+    const zoomStep = 1.0016;
+
+    const minGlobal = 0.5;
+    const maxGlobal = 3;
+    const globalStep = 1.01;
+
+    window.addEventListener('wheel', (e) => {
+        if (!e.ctrlKey) return;
+        e.preventDefault();
+
+        const rect = canvas.getBoundingClientRect();
+        const sx = e.clientX - rect.left;
+        const sy = e.clientY - rect.top;
+
+        if (e.shiftKey) {
+            const delta = -e.deltaY;
+            let factor = Math.pow(globalStep, delta);
+            let newGlobal = (window.globalScale || 1) * factor;
+
+            newGlobal = Math.max(minGlobal, Math.min(maxGlobal, newGlobal));
+            applyGlobalScale(newGlobal);
+
+            return;
+        }
+
+        const delta = -e.deltaY;
+        let factor = Math.pow(zoomStep, delta);
+
+        const oldZoom = canvasManager.zoom;
+        let newZoom = oldZoom * factor;
+        newZoom = Math.max(minZoom, Math.min(maxZoom, newZoom));
+        factor = newZoom / oldZoom;
+
+        const wrapperScale = window.globalScale || 1;
+        const sxUnscaled = (e.clientX - rect.left) / wrapperScale;
+        const syUnscaled = (e.clientY - rect.top) / wrapperScale;
+
+        canvasManager.offsetX = sxUnscaled - (sxUnscaled - canvasManager.offsetX) * factor;
+        canvasManager.offsetY = syUnscaled - (syUnscaled - canvasManager.offsetY) * factor;
+
+        canvasManager.zoom = newZoom;
+        canvasManager.redraw();
+    }, { passive: false });
+
+    window.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === '0') {
+            applyGlobalScale(1);
+            canvasManager.zoom = 1;
+            canvasManager.offsetX = 0;
+            canvasManager.offsetY = 0;
+            canvasManager.redraw();
+        }
+    });
+})();
